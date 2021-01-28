@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -23,6 +24,7 @@ func main() {
 
 func dirTree(output io.Writer, path string, printFiles bool) error {
 	files, err := FilePathWalkDir(path, printFiles)
+	fmt.Println(files)
 	if err != nil {
 		panic(err)
 	}
@@ -51,14 +53,19 @@ func dirTree(output io.Writer, path string, printFiles bool) error {
 
 func FilePathWalkDir(root string, printFiles bool) ([]string, error) {
 	var files []string
-	if printFiles {
-		fmt.Print("not worked")
-	}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if info.IsDir() {
+		if printFiles {
+			size := info.Size()
+			if size == 0 {
+				path += " (empty)"
+			} else if !info.IsDir() {
+				strSize := strconv.FormatInt(size, 10)
+				path += " (" + strSize + "b)"
+			}
+			files = append(files, path)
+		} else if info.IsDir() {
 			files = append(files, path)
 		}
-		// fmt.Printf("%s\n", info.Name())
 		return nil
 	})
 	return files, err
@@ -72,11 +79,14 @@ func createMaps(paths []string) (map[string][]string, []string) {
 		countDirs := len(pathDirList)
 		switch {
 		case countDirs == 1:
-			if pathDirList[0] == "." || pathDirList[0] == ".git" {
+			if pathDirList[0] == "." || pathDirList[0] == ".git" || pathDirList[0] == ".DS_Store (6148b)" {
 				continue
 			}
 			parents = append(parents, pathDirList[0])
 		case countDirs > 1:
+			if pathDirList[len(pathDirList)-1] == ".DS_Store (6148b)" {
+				continue
+			}
 			workMaps[pathDirList[len(pathDirList)-2]] = append(workMaps[pathDirList[len(pathDirList)-2]], pathDirList[len(pathDirList)-1])
 
 		}
